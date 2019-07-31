@@ -1,0 +1,4 @@
+__pycache__
+auth/**
+!auth/__init__.py
+playlist/**
