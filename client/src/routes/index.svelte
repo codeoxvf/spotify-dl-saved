@@ -1,43 +1,50 @@
-<script lang="ts">
-	import { page } from '$app/stores';
+<script context="module">
+	import { accessToken } from './stores';
+	import { get } from 'svelte/store';
 
-	const CLIENT_ID = 'bfc50500728c4b15a278734a930a735c';
-	const SCOPE = 'playlist-read-private';
-	const REDIRECT_URI = 'http://localhost:3000/';
-	const SERVER = 'http://localhost:5000/';
+	import ChoosePlaylist from './_components/ChoosePlaylist.svelte';
 
-	const params = $page.url.searchParams;
+	export async function load() {
+		if (!get(accessToken)) {
+			return {
+				status: 302,
+				redirect: '/login'
+			};
+		}
 
-	const loginUrl =
-		'https://accounts.spotify.com/authorize?' +
-		new URLSearchParams({
-			client_id: CLIENT_ID,
-			response_type: 'code',
-			redirect_uri: REDIRECT_URI,
-			scope: SCOPE
-		}).toString();
-
-	function handleData(data) {
+		return {};
 	}
 </script>
 
-{#if !params.has('code')}
-	<a href={loginUrl}> Login on Spotify to authorise the app </a>
-{:else}
-	{#await fetch(SERVER + '?' + new URLSearchParams({
-		code: params.get('code'),
-		redirect_uri: REDIRECT_URI
-	}))}
-		Authenticating...
-	{:then response}
-		{#await response.json()}
-			Loading...
-		{:then data}
-			{handleData(data)}
-		{:catch error}
-			{error}
-		{/await}
+<script lang="ts">
+	const authorizationHeader: RequestInit = {
+		headers: {
+			Authorization: 'Bearer ' + $accessToken
+		}
+	};
+
+	const playlists = fetch('https://api.spotify.com/v1/me/playlists', authorizationHeader).then(
+		(res) => res.json()
+	);
+</script>
+
+<svelte:head>
+	<link
+		href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+		rel="stylesheet"
+		integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+		crossorigin="anonymous"
+	/>
+</svelte:head>
+
+<div class="container my-3">
+	{#await playlists}
+		Loading...
+	{:then data}
+		<ChoosePlaylist {data} />
 	{:catch error}
-		{error}
+		<div class="alert alert-danger" role="alert">
+			{error}
+		</div>
 	{/await}
-{/if}
+</div>
