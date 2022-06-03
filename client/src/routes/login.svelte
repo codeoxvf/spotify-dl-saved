@@ -23,7 +23,11 @@
 
 	if (code) {
 		getToken = fetch(
-			'http://localhost:5000/?' + new URLSearchParams({ code: code, redirect_uri: REDIRECT_URI })
+			'http://localhost:5000/?' +
+				new URLSearchParams({
+					code: code,
+					redirect_uri: REDIRECT_URI
+				})
 		).then((res) => res.json());
 	}
 
