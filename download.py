@@ -1,8 +1,14 @@
 from flask import Blueprint, request, make_response
+
 from requests import request as python_request, get
-from os.path import isdir, isfile
-from os import makedirs
 from json import loads
+
+from os.path import isdir, isfile, join, relpath
+from os import makedirs, walk
+from zipfile import ZipFile
+
+from youtube_dl import YoutubeDL
+from ytdl_options import OPTIONS
 
 from auth import youtubeapikey
 
@@ -110,6 +116,7 @@ def download():
         req = get('https://www.googleapis.com/youtube/v3/search',
                   params=query)
 
+        # TODO: if req
         res = loads(req.text)
 
         url = 'https://youtube.com/watch?v=' + \
@@ -118,16 +125,27 @@ def download():
         print('Got result for ' + search_string + ':' + url)
 
         # download
-        ytdl_options.OPTIONS['outtmpl'] = filename + '.%(ext)s'
+        OPTIONS['outtmpl'] = filename + '.%(ext)s'
 
-        with youtube_dl.YoutubeDL(ytdl_options.OPTIONS) as ytdl:
-            print('Downloading track...')
+        with YoutubeDL(OPTIONS) as ytdl:
+            print('Downloading track')
 
             ytdl.download([url])
-            print('Done')
             print()
 
         set_id3(filename + '.mp3', track['name'], artists, album)
+        break
+
+    print('Zipping directory')
+    # TODO: unique zip name
+    with ZipFile('playlist.zip', 'w') as zip:
+        for root, dirs, files in os.walk('playlist/'):
+            for file in files:
+                zip.write(os.path.join(root, file),
+                          os.path.relpath(os.path.join(root, file),
+                                          os.path.join(path, '..')))
+
+    print('Done')
 
     response = make_response()
     response.headers.add('Access-Control-Allow-Origin',
