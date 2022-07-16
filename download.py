@@ -1,4 +1,4 @@
-from flask import Blueprint, request, make_response
+from flask import Blueprint, request, send_file
 
 from requests import request as python_request, get
 from json import loads
@@ -6,6 +6,8 @@ from json import loads
 from os.path import isdir, isfile, join, relpath
 from os import makedirs, walk
 from zipfile import ZipFile
+
+from datetime import datetime
 
 from youtube_dl import YoutubeDL
 from ytdl_options import OPTIONS
@@ -49,7 +51,7 @@ def download():
         track = item['track']
         album = track['album']['name']
 
-        dir_name = 'playlist/' + album
+        dir_name = playlist_id + '/' + album
         print('Creating directory ' + dir_name)
 
         if isdir(dir_name):
@@ -66,7 +68,7 @@ def download():
         print('Downloading album cover from ' + album_cover_url)
 
         album_cover_filename = \
-            'playlist/' + album + '/' + 'cover.jpg'
+            playlist_id + '/' + album + '/' + 'cover.jpg'
 
         if isfile(album_cover_filename):
             print('Album cover file exists, continuing')
@@ -89,7 +91,7 @@ def download():
 
         filename = track['name']
         filename = filename.replace('\\', '_').replace('/', '_')
-        filename = 'playlist/' + album.replace('\\', '_').replace('/', '_') +\
+        filename = playlist_id + '/' + album.replace('\\', '_').replace('/', '_') +\
             '/' + filename
 
         print('New file name:')
@@ -134,12 +136,10 @@ def download():
             print()
 
         set_id3(filename + '.mp3', track['name'], artists, album)
-        break
 
     print('Zipping directory')
-    # TODO: unique zip name
-    with ZipFile('playlist.zip', 'w') as zip:
-        for root, dirs, files in os.walk('playlist/'):
+    with ZipFile(playlist_id + '.zip', 'w') as zip:
+        for root, dirs, files in walk('playlist/'):
             for file in files:
                 zip.write(os.path.join(root, file),
                           os.path.relpath(os.path.join(root, file),
@@ -147,10 +147,9 @@ def download():
 
     print('Done')
 
-    response = make_response()
+    response = send_file(playlist_id + '.zip')
     response.headers.add('Access-Control-Allow-Origin',
                          'http://localhost:3000')
-
     return response
 
 
