@@ -36,8 +36,10 @@
 	/>
 </svelte:head>
 
-{#await playlist}
-	Loading...
-{:then url}
-	<a href={url} download={$selectedPlaylist + '.zip'} class="btn btn-primary">Download</a>
-{/await}
+<div class="container my-3">
+	{#await playlist}
+		Loading...
+	{:then url}
+		<a href={url} download={$selectedPlaylist + '.zip'} class="btn btn-primary"> Download </a>
+	{/await}
+</div>

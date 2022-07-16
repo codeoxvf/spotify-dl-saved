@@ -5,7 +5,7 @@ from json import loads
 
 from os.path import isdir, isfile, join, relpath
 from os import makedirs, walk
-from zipfile import ZipFile
+from shutil import make_archive
 
 from datetime import datetime
 
@@ -138,13 +138,7 @@ def download():
         set_id3(filename + '.mp3', track['name'], artists, album)
 
     print('Zipping directory')
-    with ZipFile(playlist_id + '.zip', 'w') as zip:
-        for root, dirs, files in walk('playlist/'):
-            for file in files:
-                zip.write(os.path.join(root, file),
-                          os.path.relpath(os.path.join(root, file),
-                                          os.path.join(path, '..')))
-
+    make_archive(playlist_id, 'zip', playlist_id)
     print('Done')
 
     response = send_file(playlist_id + '.zip')
